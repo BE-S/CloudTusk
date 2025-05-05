@@ -2,8 +2,8 @@ package app
 
 import (
 	"CloudTusk/lib/config"
+	"CloudTusk/lib/log"
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -31,7 +31,11 @@ func (web *Web) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	server := web.distributor.getServer()
 
 	if server != nil {
+		server.IncrementLoad()
+
 		server.Proxy.ServeHTTP(w, r)
+
+		server.DecrementLoad()
 	} else {
 		tpl, _ := outputCustomHtml("template/failed.html")
 
@@ -42,16 +46,18 @@ func (web *Web) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (web *Web) Start() {
-	http.ListenAndServe(":"+web.port, web)
+	err := http.ListenAndServe(":"+web.port, web)
 
-	log.Println("Сервер запущен на хосте " + web.port)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func outputCustomHtml(filePath string) (*template.Template, error) {
 	tpl, err := template.ParseFiles(filePath)
 
 	if err != nil {
-		log.Fatal("Отсутствует указанный html-шаблон: " + filePath)
+		log.Fatal(err.Error())
 	}
 
 	return tpl, err

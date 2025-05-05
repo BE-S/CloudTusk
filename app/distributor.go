@@ -15,6 +15,7 @@ import (
 type Server struct {
 	Url    *url.URL
 	Proxy  *httputil.ReverseProxy
+	mutex  sync.Mutex
 	Health bool
 	Load   int
 }
@@ -166,17 +167,29 @@ func (d *Distributor) getServer() *Server {
 
 	d.mutex.Lock()
 
+	defer d.mutex.Unlock()
+
 	for _, server := range d.servers {
 		if server.Health && (bestServer == nil || bestServer.Load > server.Load) {
 			bestServer = server
 		}
 	}
 
-	if bestServer != nil {
-		bestServer.Load += 1
-	}
-
-	d.mutex.Unlock()
-
 	return bestServer
+}
+
+func (s *Server) IncrementLoad() {
+	s.mutex.Lock()
+
+	defer s.mutex.Unlock()
+
+	s.Load++
+}
+
+func (s *Server) DecrementLoad() {
+	s.mutex.Lock()
+
+	defer s.mutex.Unlock()
+
+	s.Load--
 }
