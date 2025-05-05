@@ -1,0 +1,8 @@
+{
+  "web": {
+    "port": 8080
+  },
+  "hosts": [
+    "http://abakan.dostavto-ru-2024/"
+  ]
+}
